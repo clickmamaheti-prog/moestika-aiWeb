@@ -192,6 +192,22 @@ const { execFileSync } = require('child_process');
 const path2 = require('path');
 const fs2 = require('fs');
 const os2 = require('os');
+const { WebSocketServer } = require('ws');
+const pty = require('node-pty');
+
+// Terminal WebSocket — spawns real bash shell
+const wss = new WebSocketServer({ server, path: '/terminal' });
+wss.on('connection', (ws) => {
+    const shell = pty.spawn('/bin/bash', [], {
+        name: 'xterm-256color', cols: 80, rows: 24,
+        cwd: '/tmp',
+        env: { TERM: 'xterm-256color', PATH: process.env.PATH },
+    });
+    shell.on('data', (data) => { try { ws.send(data); } catch {} });
+    ws.on('message', (msg) => shell.write(msg.toString()));
+    ws.on('close', () => shell.kill());
+    ws.on('error', () => shell.kill());
+});
 
 const RUNNERS = {
     python: { cmd: 'python3', ext: '.py' },
