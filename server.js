@@ -187,6 +187,43 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+// ─── CODE RUNNER SANDBOX ───
+const { execFileSync } = require('child_process');
+const path2 = require('path');
+const fs2 = require('fs');
+const os2 = require('os');
+
+const RUNNERS = {
+    python: { cmd: 'python3', ext: '.py' },
+    javascript: { cmd: 'node', ext: '.js' },
+    shell: { cmd: 'bash', ext: '.sh' },
+};
+
+app.post('/api/run', (req, res) => {
+    const { code, language = 'python' } = req.body;
+    if (!code || typeof code !== 'string') return res.status(400).json({ error: 'Kode kosong' });
+    if (code.length > 10000) return res.status(400).json({ error: 'Kode terlalu panjang (max 10rb karakter)' });
+    const runner = RUNNERS[language];
+    if (!runner) return res.status(400).json({ error: `Bahasa ${language} tidak didukung` });
+    const blacklist = ['rm -rf', 'mkfs', 'dd if=', ':(){', 'fork()', 'import os', 'subprocess'];
+    for (const b of blacklist) {
+        if (code.toLowerCase().includes(b)) return res.json({ error: `Kode diblokir: ${b}`, blocked: true });
+    }
+    const tmpDir = fs2.mkdtempSync(path2.join(os2.tmpdir(), 'moestika-'));
+    const filePath = path2.join(tmpDir, `script${runner.ext}`);
+    fs2.writeFileSync(filePath, code);
+    const start = Date.now();
+    try {
+        const out = execFileSync(runner.cmd, [filePath], { timeout: 8000, maxBuffer: 512 * 1024, cwd: tmpDir, env: { PATH: '/usr/local/bin:/usr/bin:/bin' } });
+        res.json({ output: out.toString('utf-8'), time: Date.now() - start, success: true });
+    } catch (err) {
+        const msg = err.stderr ? err.stderr.toString('utf-8').slice(0, 2000) : err.message;
+        res.json({ output: msg, time: Date.now() - start, success: false, error: true, killed: !!err.killed });
+    } finally {
+        try { fs2.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    }
+});
+
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Moestika AI Chat running on http://0.0.0.0:${PORT}`);
 });
