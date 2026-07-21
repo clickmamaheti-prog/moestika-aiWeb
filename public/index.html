@@ -16,10 +16,37 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-DP1j6IXK.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Cl0yJH1Y.css">
+    <script type="module" crossorigin src="/assets/index-BFa3UgES.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DGSLTkhq.css">
   </head>
   <body>
     <div id="root"></div>
+    <style>
+      /* Munculin tombol pin, hapus, rename biar selalu kelihatan */
+      .group .group-hover\:flex { display: flex !important; opacity: 0.55; }
+      .group .group-hover\:flex button:hover { opacity: 1; }
+    </style>
+    <script>
+      function injectTermBtn(container){
+        if(container.querySelector('#term-sb-btn'))return;
+        const bottom=container.querySelector('[class*="border-t"]')||container.lastElementChild;
+        if(!bottom)return;
+        const link=document.createElement('a');
+        link.id='term-sb-btn';
+        link.href='https://terminal.devculture.xyz';
+        link.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-size:13px;color:#a1a1aa;text-decoration:none;transition:all .2s';
+        link.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> <span>Terminal</span>';
+        link.onmouseover=()=>{link.style.background='rgba(255,255,255,.05)';link.style.color='#f4f4f5'};
+        link.onmouseout=()=>{link.style.background='';link.style.color='#a1a1aa'};
+        bottom.appendChild(link);
+      }
+      // Inject ke semua aside yang muncul (desktop + mobile drawer)
+      const obs=new MutationObserver(()=>{
+        document.querySelectorAll('aside').forEach(a=>injectTermBtn(a));
+      });
+      obs.observe(document.body,{childList:true,subtree:true});
+      // Coba langsung juga
+      setTimeout(()=>document.querySelectorAll('aside').forEach(a=>injectTermBtn(a)),1000);
+    </script>
   </body>
 </html>
